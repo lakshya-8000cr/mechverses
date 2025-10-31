@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useEffect } from 'react'
 import useGameStore from '../store/gameStore'
 
 const Actions = () => {
@@ -7,6 +7,7 @@ const Actions = () => {
     const savedVehicles = useGameStore((state) => state.savedVehicles)
     const setSavedVehicles = useGameStore((state) => state.setSavedVehicles)
     const showNotification = useGameStore((state) => state.showNotification)
+    const resetVehicle = useGameStore((state) => state.resetVehicle) // ✅ NEW
 
     // Save current vehicle to local storage.
     const saveVehicle = () => {
@@ -118,8 +119,35 @@ const Actions = () => {
         window.dispatchEvent(new Event('takeScreenshot'))
     }
 
+    // ✅ NEW: Retry button handler
+    const handleRetry = useCallback(() => {
+        if (typeof resetVehicle === 'function') {
+            resetVehicle()
+        } else {
+            console.error('resetVehicle function is not available from the store.')
+        }
+    }, [resetVehicle])
+
+    // ✅ NEW: Keyboard shortcut for Retry (R key)
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            // Check if 'R' or 'r' key is pressed
+            if (e.key === 'r' || e.key === 'R') {
+                // Prevent if user is typing in an input field
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                    return
+                }
+                handleRetry()
+            }
+        }
+
+        window.addEventListener('keydown', handleKeyDown)
+        return () => window.removeEventListener('keydown', handleKeyDown)
+    }, [handleRetry])
+
     return (
         <div id='actions' className='flex gap-2 absolute bottom-4 right-4'>
+            <button onClick={handleRetry}>Retry</button>
             <button onClick={saveVehicle}>Save</button>
             <button onClick={shareVehicle}>Share</button>
             <button onClick={takeScreenshot}>Screenshot</button>

@@ -174,6 +174,26 @@ const useGameStore = create((set, get) => {
 
             return false
         },
+
+        // ✅ NEW: Vehicle physics reset function
+        vehiclePhysicsReset: null,
+        setVehiclePhysicsReset: (resetFn) => set({ vehiclePhysicsReset: resetFn }),
+
+        // ✅ NEW: Reset vehicle (calls physics reset)
+        resetVehicle: () => {
+            // Reset physics (position, rotation, velocity)
+            const physicsReset = get().vehiclePhysicsReset
+            if (physicsReset) {
+                console.log('Resetting vehicle physics (position, rotation, velocity)')
+                physicsReset()
+            } else {
+                console.warn('Vehicle physics reset function not available')
+            }
+
+            // Optional: Also reset race state when resetting vehicle
+            // Uncomment if you want retry button to also reset the race
+            // get().resetRace()
+        },
     }
 })
 

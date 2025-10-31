@@ -1,7 +1,7 @@
-import { useRef, useEffect, useState } from 'react'
+import { useRef, useEffect, useState, useCallback } from 'react'
 import { useRapier, useAfterPhysicsStep } from '@react-three/rapier'
 import { useFrame } from '@react-three/fiber'
-import { Vector3, Quaternion } from 'three'
+import { Vector3, Quaternion, Euler } from 'three'
 
 import useGameStore from '../store/gameStore'
 import useInputStore from '../store/inputStore'
@@ -22,11 +22,14 @@ const FORCES = {
     airControl: 0.1, // Subtle air control force
 }
 
+// Constant for reset height
+const RESET_HEIGHT_OFFSET = 2.0
+
 /**
  * Generic vehicle physics hook for wheeled vehicles
  * @param {Object} vehicleRef - Reference to the vehicle rigid body
  * @param {Array} wheels - Array of wheel configurations with refs and positions
- * @returns {Object} - Vehicle controller
+ * @returns {Object} - Vehicle controller and control functions (like resetVehicle)
  */
 export const useVehiclePhysics = (vehicleRef, wheels) => {
     const physicsEnabled = useGameStore((state) => state.physicsEnabled)
@@ -73,7 +76,7 @@ export const useVehiclePhysics = (vehicleRef, wheels) => {
                 vehicleController.current = null
             }
         }
-    }, [vehicleRef, wheels, world])
+    }, [vehicleRef, world])
 
     // Update wheel positions after physics step
     useAfterPhysicsStep((world) => {
@@ -201,9 +204,42 @@ export const useVehiclePhysics = (vehicleRef, wheels) => {
         }
     })
 
+    /**
+     * ✅ NEW: Resets the vehicle's position and rotation to an upright state.
+     * Wrapped in useCallback to maintain stable reference.
+     */
+    const resetVehicle = useCallback(() => {
+        const vehicle = vehicleRef.current
+        if (!vehicle) {
+            console.warn('Vehicle ref not available for reset')
+            return
+        }
+
+        const position = vehicle.translation()
+        const rotation = vehicle.rotation()
+
+        const currentQuat = new Quaternion(rotation.x, rotation.y, rotation.z, rotation.w)
+        const euler = new Euler().setFromQuaternion(currentQuat, 'YXZ')
+        const yaw = euler.y
+
+        const preservedYawRotation = new Quaternion().setFromAxisAngle(VECTORS.UP, yaw)
+
+        vehicle.setTranslation(
+            { x: position.x, y: position.y + RESET_HEIGHT_OFFSET, z: position.z },
+            true
+        )
+        vehicle.setRotation(preservedYawRotation, true)
+
+        vehicle.setLinvel({ x: 0, y: 0, z: 0 }, true)
+        vehicle.setAngvel({ x: 0, y: 0, z: 0 }, true)
+
+        console.log(`Vehicle reset to Y position: ${position.y + RESET_HEIGHT_OFFSET}`)
+    }, [vehicleRef])
+
     // Return the vehicleController ref and control functions
     return {
         vehicleController,
+        resetVehicle, // ✅ NEW: Export reset function
     }
 }
 

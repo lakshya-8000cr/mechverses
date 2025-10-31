@@ -6,7 +6,7 @@ import StartLine from './StartLine';
 // Vehicle manager component with race support
 const VehicleManager = () => {
     const vehicleRef = useRef(null);
-
+    
     // Get current vehicle config
     const body = useGameStore((state) => state.currentVehicle.body);
     const color = useGameStore((state) => state.currentVehicle.color);
@@ -21,7 +21,7 @@ const VehicleManager = () => {
     const tire = useGameStore((state) => state.currentVehicle.tire);
     const tire_diameter = useGameStore((state) => state.currentVehicle.tire_diameter);
     const addons = useGameStore((state) => state.currentVehicle.addons);
-
+    
     return (
         <>
             <Vehicle

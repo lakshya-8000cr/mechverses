@@ -153,6 +153,7 @@ const Vehicle = forwardRef((props, ref) => {
 
     // Get vehicle store
     const setCameraTarget = useGameStore((state) => state.setCameraTarget)
+    const setVehiclePhysicsReset = useGameStore((state) => state.setVehiclePhysicsReset) // ✅ NEW
 
     const chassisRef = useRef(null)
     const wheelRefs = [useRef(null), useRef(null), useRef(null), useRef(null)]
@@ -200,8 +201,20 @@ const Vehicle = forwardRef((props, ref) => {
         }))
     }, [offset, axleHeight, wheelbase, tire_diameter])
 
-    // Use vehicle physics
-    useVehiclePhysics(chassisRef, physicsWheels)
+    // ✅ NEW: Use vehicle physics and get the reset function
+    const { resetVehicle } = useVehiclePhysics(chassisRef, physicsWheels)
+
+    // ✅ NEW: Register the physics reset function in the store
+    useEffect(() => {
+        if (resetVehicle) {
+            setVehiclePhysicsReset(resetVehicle)
+        }
+        
+        // Cleanup on unmount
+        return () => {
+            setVehiclePhysicsReset(null)
+        }
+    }, [resetVehicle, setVehiclePhysicsReset])
 
     // Update camera target each frame
     useFrame(() => {
